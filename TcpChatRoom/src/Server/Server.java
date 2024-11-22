@@ -4,13 +4,15 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server implements Runnable {
 
   private ArrayList<ClientConnectionHandler> connections;
   private boolean done;
   private ServerSocket serverSocket;
-  private Server server;
+  private ExecutorService pool;
 
   public Server() {
     connections = new ArrayList<>();
@@ -23,10 +25,12 @@ public class Server implements Runnable {
       serverSocket = new ServerSocket(9090);
       while (!done) {
         Socket client = serverSocket.accept();
-        ClientConnectionHandler clientConnectionHandler = new ClientConnectionHandler(client, server);
+        pool = Executors.newCachedThreadPool();
+        ClientConnectionHandler clientConnectionHandler = new ClientConnectionHandler(client, this);
         connections.add(clientConnectionHandler);
+        pool.execute(clientConnectionHandler);
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
        shutdown();
     }
   }
@@ -39,6 +43,7 @@ public class Server implements Runnable {
 
   public void shutdown(){
     done = true;
+    pool.shutdown();
     if(!serverSocket.isClosed()){
       try {
         serverSocket.close();
@@ -47,7 +52,7 @@ public class Server implements Runnable {
           client.shutdown();
         }
       } catch (IOException e) {
-        //TODO: handle
+        //ignore
       }
     }
   }

@@ -29,35 +29,37 @@ public class ClientConnectionHandler implements Runnable {
 
       out.println("Please enter a valid nickname : ");
       nickname = in.readLine();
-      if (nickname == null || nickname.isEmpty()) {
-        out.println("Please enter valid nickname : ");
-        nickname = in.readLine();
-      }
+//      if (nickname == null || nickname.isEmpty()) {
+//        out.println("Please enter valid nickname : ");
+//        nickname = in.readLine();
+//      }
       System.out.println(nickname + " connected");
       server.broadcast(nickname + " joined the chat!");
 
       String message;
 
-      while ((message = in.readLine()) != null || !(message = in.readLine()).isEmpty()) {
-        if (message.startsWith("/nick ")) {
+      while ((message = in.readLine()) != null && !message.isEmpty()) {
+        if (message.startsWith("/nick")) {
           String[] splits = message.split(" ", 2);
           if (splits.length == 2) {
-            server.broadcast(nickname + "changed their nickname to -> " + splits[1]);
+            server.broadcast(nickname + " changed their nickname to -> " + splits[1]);
             nickname = splits[1];
           } else {
             out.println("no nickname provided.");
           }
         } else if (message.startsWith("/leave")) {
           server.broadcast(nickname + " left the chat!");
+          System.out.println(nickname + " left``````");
           shutdown();
+          break;
         } else {
-          out.println(nickname + " : " + message);
+          server.broadcast(nickname + " : " + message);
         }
       }
 
     } catch (IOException e) {
       shutdown();
-      throw new RuntimeException("IOException while connecting to client", e);
+      throw new RuntimeException("IOException while connecting to client ", e);
     }
   }
 
@@ -69,7 +71,7 @@ public class ClientConnectionHandler implements Runnable {
     try {
       in.close();
       out.close();
-      if (!client.isClosed()) client.close();
+      client.close();
     } catch (IOException e) {
       //ignore
     }
